@@ -16,13 +16,11 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
 
-        // Dokumen milik sendiri
         $myDocuments = Document::with('owner', 'shares')
             ->where('user_id', $user->id)
             ->latest()
             ->get();
 
-        // Dokumen yang dibagikan ke saya
         $sharedDocuments = Document::with('owner')
             ->whereHas('shares', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
@@ -48,7 +46,6 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
 
-        // Cek akses
         if (!$document->isAccessibleBy($user)) {
             abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
@@ -65,7 +62,6 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
 
-        // Cek permission edit
         if (!$document->canEdit($user)) {
             return response()->json(['error' => 'Tidak memiliki izin edit'], 403);
         }
@@ -75,7 +71,6 @@ class DocumentController extends Controller
             'title'   => 'nullable|string|max:255',
         ]);
 
-        // Simpan versi setiap 10 update (bisa di-improve)
         $versionCount = $document->versions()->count();
         if ($versionCount % 10 === 0) {
             DocumentVersion::create([
@@ -91,7 +86,6 @@ class DocumentController extends Controller
             'title'   => $request->title ?? $document->title,
         ]);
 
-        // Broadcast ke semua user di channel ini
         broadcast(new DocumentUpdated(
             documentId: $document->id,
             content:    $request->content ?? '',
@@ -162,57 +156,61 @@ class DocumentController extends Controller
         return redirect()->route('documents.index');
     }
 
-    // ========== SHARE METHODS ==========
 
-    /**
-     * Bagikan dokumen ke user lain
-     */
     public function share(Request $request, Document $document)
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        // Hanya owner yang bisa share
-        if ($document->user_id !== $user->id) {
-            return response()->json(['error' => 'Hanya pemilik yang bisa membagikan dokumen.'], 403);
+            if ((int) $document->user_id !== (int) $user->id) {
+                return response()->json(['error' => 'Hanya pemilik yang bisa membagikan dokumen.'], 403);
+            }
+
+            $email = $request->input('email', '');
+            $permission = $request->input('permission', 'viewer');
+
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return response()->json(['error' => 'Email tidak valid.'], 422);
+            }
+
+            if (!in_array($permission, ['viewer', 'editor'])) {
+                return response()->json(['error' => 'Permission harus viewer atau editor.'], 422);
+            }
+
+            $targetUser = User::where('email', $email)->first();
+
+            if (!$targetUser) {
+                return response()->json(['error' => 'User dengan email tersebut tidak ditemukan.'], 422);
+            }
+
+            if ((int) $targetUser->id === (int) $user->id) {
+                return response()->json(['error' => 'Tidak bisa membagikan ke diri sendiri.'], 422);
+            }
+
+            DocumentShare::updateOrCreate(
+                ['document_id' => $document->id, 'user_id' => $targetUser->id],
+                ['permission' => $permission]
+            );
+
+            return response()->json([
+                'status' => 'shared',
+                'user'   => [
+                    'id'    => $targetUser->id,
+                    'name'  => $targetUser->name,
+                    'email' => $targetUser->email,
+                ],
+                'permission' => $permission,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        $request->validate([
-            'email'      => 'required|email|exists:users,email',
-            'permission' => 'required|in:viewer,editor',
-        ]);
-
-        $targetUser = User::where('email', $request->email)->first();
-
-        // Jangan share ke diri sendiri
-        if ($targetUser->id === $user->id) {
-            return response()->json(['error' => 'Tidak bisa membagikan ke diri sendiri.'], 422);
-        }
-
-        // Upsert share
-        DocumentShare::updateOrCreate(
-            ['document_id' => $document->id, 'user_id' => $targetUser->id],
-            ['permission' => $request->permission]
-        );
-
-        return response()->json([
-            'status' => 'shared',
-            'user'   => [
-                'id'    => $targetUser->id,
-                'name'  => $targetUser->name,
-                'email' => $targetUser->email,
-            ],
-            'permission' => $request->permission,
-        ]);
     }
 
-    /**
-     * Hapus akses share user
-     */
     public function removeShare(Document $document, User $user)
     {
         $currentUser = Auth::user();
 
-        if ($document->user_id !== $currentUser->id) {
+        if ((int) $document->user_id !== (int) $currentUser->id) {
             return response()->json(['error' => 'Hanya pemilik yang bisa menghapus akses.'], 403);
         }
 
@@ -223,9 +221,6 @@ class DocumentController extends Controller
         return response()->json(['status' => 'removed']);
     }
 
-    /**
-     * Daftar user yang memiliki akses
-     */
     public function sharedUsers(Document $document)
     {
         $shares = $document->shares()->with('user')->get()->map(function ($share) {
@@ -238,5 +233,16 @@ class DocumentController extends Controller
         });
 
         return response()->json($shares);
+    }
+
+    public function leaveShare(Document $document)
+    {
+        $user = Auth::user();
+
+        DocumentShare::where('document_id', $document->id)
+            ->where('user_id', $user->id)
+            ->delete();
+
+        return redirect()->route('documents.index');
     }
 }

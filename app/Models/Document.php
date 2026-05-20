@@ -24,9 +24,6 @@ class Document extends Model
         return $this->hasMany(DocumentShare::class);
     }
 
-    /**
-     * Cek apakah user bisa mengakses dokumen ini (owner atau shared)
-     */
     public function isAccessibleBy($user): bool
     {
         if ($this->user_id === $user->id) {
@@ -36,9 +33,6 @@ class Document extends Model
         return $this->shares()->where('user_id', $user->id)->exists();
     }
 
-    /**
-     * Cek apakah user bisa mengedit dokumen ini (owner atau editor permission)
-     */
     public function canEdit($user): bool
     {
         if ($this->user_id === $user->id) {

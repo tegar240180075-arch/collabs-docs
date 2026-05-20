@@ -3,7 +3,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentController;
 use Illuminate\Support\Facades\Route;
 
-// Auth routes
 Route::middleware('guest')->group(function () {
     Route::get('/login',            [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login',           [AuthController::class, 'login'])->name('login.post');
@@ -13,7 +12,6 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Document routes
 Route::middleware('auth')->group(function () {
     Route::get('/',                                             [DocumentController::class, 'index'])->name('documents.index');
     Route::post('/documents',                                   [DocumentController::class, 'create'])->name('documents.create');
@@ -25,8 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/documents/{document}/versions/{version}/restore', [DocumentController::class, 'restoreVersion'])->name('documents.restore');
     Route::post('/documents/{document}/versions/save',          [DocumentController::class, 'saveVersion'])->name('documents.saveVersion');
 
-    // Share routes
     Route::post('/documents/{document}/share',                  [DocumentController::class, 'share'])->name('documents.share');
     Route::delete('/documents/{document}/share/{user}',         [DocumentController::class, 'removeShare'])->name('documents.removeShare');
     Route::get('/documents/{document}/shared-users',            [DocumentController::class, 'sharedUsers'])->name('documents.sharedUsers');
+    Route::delete('/documents/{document}/leave-share',           [DocumentController::class, 'leaveShare'])->name('documents.leaveShare');
 });

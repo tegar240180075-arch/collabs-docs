@@ -1,58 +1,185 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CollabDocs - Real-time Collaborative Document Editor
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi kolaborasi dokumen real-time seperti Google Docs, dibangun dengan Laravel, Reverb WebSocket, dan Vanilla JavaScript.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Autentikasi (Register & Login)
+- CRUD Dokumen (Buat, edit, hapus)
+- Kolaborasi Real-time (Edit dokumen bersamaan)
+- Remote Cursor (Lihat posisi cursor user lain dengan nama & warna)
+- Selection Highlight (Lihat teks yang di-select oleh user lain)
+- Typing Indicator (Indikator siapa yang sedang mengetik)
+- Sharing (Bagikan dokumen sebagai Editor atau Viewer)
+- Version History (Simpan dan restore versi dokumen)
+- Online Presence (Lihat siapa saja yang sedang online)
+- Activity Log (Log aktivitas join/leave user)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Backend: Laravel 12
+- WebSocket: Laravel Reverb
+- Frontend: Vanilla JavaScript, CSS
+- Database: MySQL
+- Editor: ContentEditable dengan rich text formatting
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Prasyarat
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Pastikan sudah terinstal di komputer Anda:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- PHP >= 8.2
+- Composer >= 2.x
+- MySQL >= 5.7
+- Node.js >= 18.x & NPM
+- Git
 
-## Agentic Development
+Rekomendasi: Gunakan [Laragon](https://laragon.org/) (Windows) untuk kemudahan setup PHP + MySQL.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
+
+## Langkah Instalasi
+
+### 1. Clone Repository
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/tegar240180075-arch/collab-docs.git
+cd collab-docs
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Install Dependencies
 
-## Contributing
+```bash
+composer install
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Konfigurasi Environment
 
-## Code of Conduct
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 4. Setup Database
 
-## Security Vulnerabilities
+Buat database MySQL baru, lalu edit file `.env`:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=collab_docs
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## License
+Jalankan migrasi:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan migrate
+```
+
+### 5. Konfigurasi Reverb (WebSocket)
+
+Pastikan konfigurasi Reverb di file `.env`:
+
+```env
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=652434
+REVERB_APP_KEY=jn9z3ejzeje4iy2gatsh
+REVERB_APP_SECRET=yqzyeqowfv3u5lfibvql
+REVERB_HOST="localhost"
+REVERB_PORT=8085
+REVERB_SERVER_PORT=8085
+REVERB_SCHEME=http
+```
+
+Catatan: Pastikan port 8085 tidak digunakan oleh aplikasi lain. Jika sudah terpakai, ganti ke port lain.
+
+---
+
+## Menjalankan Aplikasi
+
+Anda perlu membuka 2 terminal secara bersamaan:
+
+### Terminal 1 - Laravel Server
+
+```bash
+php artisan serve
+```
+
+Server akan berjalan di: `http://localhost:8000`
+
+### Terminal 2 - Reverb WebSocket Server
+
+```bash
+php artisan reverb:start
+```
+
+WebSocket server akan berjalan di port 8085.
+
+Tambahkan `--debug` untuk melihat log koneksi WebSocket:
+
+```bash
+php artisan reverb:start --debug
+```
+
+---
+
+## Cara Testing Kolaborasi Real-time
+
+1. Buka browser dan akses `http://localhost:8000`
+2. Register 2 akun user (User A dan User B)
+3. Login sebagai User A, buat dokumen baru, klik "Bagikan", masukkan email User B sebagai Editor
+4. Buka browser Incognito/Private, login sebagai User B, buka dokumen yang dibagikan
+5. Mulai mengetik di salah satu browser, teks akan muncul real-time di browser lainnya
+
+### Yang Akan Terlihat:
+
+- Teks yang diketik muncul langsung di layar user lain
+- Cursor berwarna dengan nama user tampil di posisi ketikan
+- Indikator "sedang mengetik..." muncul di bawah editor
+- Badge online menunjukkan jumlah user aktif
+- Activity log mencatat join/leave user
+
+---
+
+## Struktur Project
+
+```
+collab-docs/
+├── app/
+│   ├── Events/
+│   ├── Http/Controllers/
+│   ├── Models/
+│   └── Providers/
+├── config/
+│   ├── broadcasting.php
+│   └── reverb.php
+├── database/
+│   └── migrations/
+├── public/
+│   ├── css/
+│   │   ├── auth.css
+│   │   ├── dashboard.css
+│   │   └── editor.css
+│   └── js/
+│       └── collab.js
+├── resources/views/
+│   ├── auth/
+│   └── documents/
+│       ├── index.blade.php
+│       └── editor.blade.php
+└── routes/
+    ├── channels.php
+    └── web.php
+```
+
+---
+
+## Lisensi
+
+Project ini dibuat untuk keperluan pembelajaran.

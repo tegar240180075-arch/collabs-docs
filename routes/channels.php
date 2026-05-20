@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Models\Document;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -9,7 +9,6 @@ Broadcast::channel('document.{documentId}', function ($user, $documentId) {
         return false;
     }
 
-    // Owner atau shared user boleh join channel
     if ($document->isAccessibleBy($user)) {
         return [
             'id'    => $user->id,

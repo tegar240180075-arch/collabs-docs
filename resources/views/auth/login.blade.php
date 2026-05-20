@@ -9,7 +9,7 @@
 <body>
 <div class="auth-wrapper">
     <div class="auth-logo">
-        <div class="logo-icon">📝</div>
+        <div class="logo-icon"></div>
         <h1>CollabDocs</h1>
         <p>Real-time collaborative documents</p>
     </div>
