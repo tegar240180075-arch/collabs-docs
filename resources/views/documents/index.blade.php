@@ -93,7 +93,7 @@
                         <form method="POST" action="{{ route('documents.leaveShare', $doc->id) }}"
                               onsubmit="return confirm('Hapus dokumen ini dari daftar Anda?')">
                             @csrf @method('DELETE')
-                            <button type="submit" class="btn-delete"></button>
+                            <button type="submit" class="btn-delete">Hapus</button>
                         </form>
                     </div>
                 </div>
